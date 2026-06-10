@@ -1,3 +1,11 @@
+/* ============================================================
+   SmartPOS — App shell (sidebar + top bar)
+   GLOBAL (not scoped): the sidebar uses Blazor <NavLink> child
+   components, whose rendered <a> elements don't receive a scoped
+   CSS attribute — so these rules must be global to reach them.
+   All selectors use unique .shell__* BEM names.
+   ============================================================ */
+
 .shell { display:flex; min-height:100vh; background:var(--bg); }
 
 /* Sidebar */
@@ -5,7 +13,7 @@
     border-right:1px solid var(--border); display:flex; flex-direction:column;
     position:sticky; top:0; height:100vh; z-index:var(--z-sidebar);
     transition:width var(--t-base); }
-:global(html[data-sidebar="collapsed"]) .shell__sidebar { width:var(--sidebar-w-collapsed); }
+html[data-sidebar="collapsed"] .shell__sidebar { width:var(--sidebar-w-collapsed); }
 
 .shell__brand { display:flex; align-items:center; gap:0.5rem; height:var(--topbar-h);
     padding:0 1rem; border-bottom:1px solid var(--border); overflow:hidden; }
@@ -17,26 +25,28 @@
 .shell__role-tag { font-size:0.6rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
     color:var(--role-accent); background:var(--accent-soft); padding:0.1rem 0.4rem;
     border-radius:var(--radius-full); margin-left:auto; white-space:nowrap; }
-:global(html[data-sidebar="collapsed"]) .shell__brand-text,
-:global(html[data-sidebar="collapsed"]) .shell__role-tag { display:none; }
+html[data-sidebar="collapsed"] .shell__brand-text,
+html[data-sidebar="collapsed"] .shell__role-tag { display:none; }
 
-.shell__nav { flex:1; overflow-y:auto; overflow-x:hidden; padding:var(--sp-3); display:flex; flex-direction:column; gap:2px; }
+.shell__nav { flex:1; overflow-y:auto; overflow-x:hidden; padding:var(--sp-3);
+    display:flex; flex-direction:column; gap:2px; }
 .shell__nav-link { display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.7rem;
     border-radius:var(--radius-md); color:var(--text-muted); text-decoration:none;
-    font-size:var(--fs-sm); font-weight:500; white-space:nowrap; transition:background var(--t-fast), color var(--t-fast); }
-.shell__nav-link:hover { background:var(--surface-2); color:var(--text); }
+    font-size:var(--fs-sm); font-weight:500; white-space:nowrap;
+    transition:background var(--t-fast), color var(--t-fast); }
+.shell__nav-link:hover { background:var(--surface-2); color:var(--text); text-decoration:none; }
 .shell__nav-link.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
 .shell__nav-icon { font-size:1.05rem; width:20px; text-align:center; flex-shrink:0; }
-:global(html[data-sidebar="collapsed"]) .shell__nav-label { display:none; }
-:global(html[data-sidebar="collapsed"]) .shell__nav-link { justify-content:center; }
+html[data-sidebar="collapsed"] .shell__nav-label { display:none; }
+html[data-sidebar="collapsed"] .shell__nav-link { justify-content:center; }
 
 .shell__collapse-btn { display:flex; align-items:center; justify-content:center; gap:0.5rem;
     height:42px; border:none; border-top:1px solid var(--border); background:var(--surface);
     color:var(--text-muted); cursor:pointer; font-size:var(--fs-sm); font-weight:500; }
 .shell__collapse-btn:hover { background:var(--surface-2); color:var(--text); }
 .shell__collapse-btn .bi { transition:transform var(--t-base); }
-:global(html[data-sidebar="collapsed"]) .shell__collapse-btn .bi { transform:rotate(180deg); }
-:global(html[data-sidebar="collapsed"]) .shell__collapse-label { display:none; }
+html[data-sidebar="collapsed"] .shell__collapse-btn .bi { transform:rotate(180deg); }
+html[data-sidebar="collapsed"] .shell__collapse-label { display:none; }
 
 /* Main */
 .shell__main { flex:1; display:flex; flex-direction:column; min-width:0; }
@@ -54,8 +64,8 @@
 
 /* Theme icon swap (driven by <html data-theme>) */
 .shell__icon-dark { display:none; }
-:global([data-theme="dark"]) .shell__icon-light { display:none; }
-:global([data-theme="dark"]) .shell__icon-dark { display:inline; }
+[data-theme="dark"] .shell__icon-light { display:none; }
+[data-theme="dark"] .shell__icon-dark { display:inline; }
 
 /* Profile */
 .shell__profile { position:relative; }
@@ -82,12 +92,12 @@
     .shell__sidebar { position:fixed; left:0; top:0; transform:translateX(-100%);
         transition:transform var(--t-base); width:var(--sidebar-w); }
     /* On mobile the sidebar is a full-width off-canvas drawer — ignore the collapsed rail. */
-    :global(html[data-sidebar="collapsed"]) .shell__sidebar { width:var(--sidebar-w); }
-    :global(html[data-sidebar="collapsed"]) .shell__nav-label,
-    :global(html[data-sidebar="collapsed"]) .shell__brand-text,
-    :global(html[data-sidebar="collapsed"]) .shell__role-tag,
-    :global(html[data-sidebar="collapsed"]) .shell__collapse-label { display:inline; }
-    :global(html[data-sidebar="collapsed"]) .shell__nav-link { justify-content:flex-start; }
+    html[data-sidebar="collapsed"] .shell__sidebar { width:var(--sidebar-w); }
+    html[data-sidebar="collapsed"] .shell__nav-label,
+    html[data-sidebar="collapsed"] .shell__brand-text,
+    html[data-sidebar="collapsed"] .shell__role-tag,
+    html[data-sidebar="collapsed"] .shell__collapse-label { display:inline; }
+    html[data-sidebar="collapsed"] .shell__nav-link { justify-content:flex-start; }
     .shell--mobile-open .shell__sidebar { transform:translateX(0); }
     .shell--mobile-open .shell__overlay { display:block; }
     .shell__menu-btn { display:flex; }
