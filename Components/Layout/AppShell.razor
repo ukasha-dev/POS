@@ -1,0 +1,135 @@
+@namespace SmartPOS.Components.Layout
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="shell @(_collapsed ? "shell--collapsed" : "") @(_mobileOpen ? "shell--mobile-open" : "")">
+
+    <aside class="shell__sidebar" style="--role-accent: @RoleAccent;">
+        <div class="shell__brand">
+            <span class="shell__brand-mark"><i class="bi bi-shop"></i></span>
+            <span class="shell__brand-text">SmartPOS<span class="shell__brand-plus">+</span></span>
+            <span class="shell__role-tag">@RoleLabel</span>
+        </div>
+
+        <nav class="shell__nav" aria-label="@RoleLabel navigation">
+            @foreach (var item in NavItems)
+            {
+                <NavLink class="shell__nav-link" href="@item.Href" Match="item.Match" @onclick="CloseMobile">
+                    <i class="bi @item.Icon shell__nav-icon"></i>
+                    <span class="shell__nav-label">@item.Label</span>
+                </NavLink>
+            }
+        </nav>
+
+        <button class="shell__collapse-btn" @onclick="ToggleCollapse" aria-label="Toggle sidebar">
+            <i class="bi @(_collapsed ? "bi-chevron-right" : "bi-chevron-left")"></i>
+        </button>
+    </aside>
+
+    <div class="shell__overlay" @onclick="CloseMobile"></div>
+
+    <div class="shell__main">
+        <header class="shell__topbar">
+            <button class="shell__icon-btn shell__menu-btn" @onclick="ToggleMobile" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="shell__title">@PageTitle</div>
+            <div class="shell__topbar-right">
+                <button class="shell__icon-btn shell__theme-btn" onclick="smartposToggleTheme()" aria-label="Toggle theme">
+                    <i class="bi bi-sun-fill shell__icon-light"></i>
+                    <i class="bi bi-moon-stars-fill shell__icon-dark"></i>
+                </button>
+                <div class="shell__profile">
+                    <button class="shell__profile-btn" @onclick="ToggleProfile" aria-label="Account">
+                        <span class="avatar-app">@_initials</span>
+                    </button>
+                    @if (_profileOpen)
+                    {
+                        <div class="shell__profile-menu">
+                            <div class="shell__profile-head">
+                                <div class="shell__profile-name">@_name</div>
+                                <span class="badge-role badge-role-@_roleClass">@_role</span>
+                            </div>
+                            <button class="shell__profile-item" onclick="signOut()">
+                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </header>
+
+        <main class="shell__content">
+            <div class="app-container">
+                @Body
+            </div>
+        </main>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Body { get; set; }
+    [Parameter] public string RoleLabel { get; set; } = "Staff";
+    [Parameter] public string RoleAccent { get; set; } = "var(--accent)";
+    [Parameter] public string RoleClass { get; set; } = "admin";
+    [Parameter] public string PageTitle { get; set; } = "";
+    [Parameter] public IReadOnlyList<NavItem> NavItems { get; set; } = new List<NavItem>();
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private bool _collapsed;
+    private bool _mobileOpen;
+    private bool _profileOpen;
+    private string _name = "User";
+    private string _role = "Staff";
+    private string _roleClass = "admin";
+    private string _initials = "U";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _roleClass = RoleClass;
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            var user = state.User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                _name = user.Identity.Name
+                        ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                        ?? "User";
+                _role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? RoleLabel;
+                _initials = GetInitials(_name);
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _collapsed = await JS.InvokeAsync<bool>("smartposGetSidebarCollapsed");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleCollapse()
+    {
+        _collapsed = !_collapsed;
+        await JS.InvokeVoidAsync("smartposSetSidebarCollapsed", _collapsed);
+    }
+
+    private void ToggleMobile()  => _mobileOpen = !_mobileOpen;
+    private void CloseMobile()   => _mobileOpen = false;
+    private void ToggleProfile() => _profileOpen = !_profileOpen;
+
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+        return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
+    }
+
+    public void Dispose() { }
+}
