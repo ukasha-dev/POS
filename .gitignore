@@ -4,6 +4,14 @@
 ## This .gitignore file can be used at the root of the solution.
 ## See https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Secrets / environment
+.env
+*.env
+!.env.example
+
+# Kiro specs / tooling
+.kiro/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

@@ -21,15 +21,18 @@ using SmartPOS.Models;
 using SmartPOS.Web.Services.Shahzain;
 using SmartPOS.Web.Services;
 
+// Load secrets from .env (gitignored) into environment variables before configuration is built
+DotNetEnv.Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null)
+            errorCodesToAdd: null)
     ));
 
 builder.Services.AddScoped<IDbContextFactory<AppDbContext>>(sp =>
@@ -178,7 +181,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Database initialization failed. Check your SQL Server connection string in appsettings.json.");
+        logger.LogError(ex, "Database initialization failed. Check your Neon PostgreSQL connection string in appsettings.json.");
         throw; // Re-throw so the app fails fast — prevents runtime errors later
     }
 }

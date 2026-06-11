@@ -26,9 +26,11 @@ public class AuthService
     {
         try
         {
+            var normalizedEmail = (email ?? string.Empty).Trim().ToLower();
+
             var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.IsActive);
 
             if (user == null)
                 return (null, null);

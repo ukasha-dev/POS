@@ -9,18 +9,19 @@ namespace SmartPOS.Services.MaryamJ;
 
 public class CustomerService : ICustomerService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _factory;
 
-    public CustomerService(AppDbContext context)
+    public CustomerService(IDbContextFactory<AppDbContext> factory)
     {
-        _context = context;
+        _factory = factory;
     }
 
     public async Task<ApiResponse<List<CustomerDto>>> GetAllCustomers(CustomerFilterDto filter)
     {
         try
         {
-            var query = _context.Customers.AsQueryable();
+            using var context = _factory.CreateDbContext();
+            var query = context.Customers.AsQueryable();
 
             if (filter.IsActive.HasValue)
                 query = query.Where(c => c.IsActive == filter.IsActive.Value);
@@ -80,7 +81,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(id);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(id);
             if (customer == null)
                 return ApiResponse<CustomerDto>.Fail("Customer not found.");
 
@@ -96,7 +98,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers
                 .Include(c => c.Sales)
                     .ThenInclude(s => s.SaleItems)
                 .Include(c => c.LoyaltyTransactions.OrderByDescending(lt => lt.CreatedAt).Take(50))
@@ -153,7 +156,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers
                 .FirstOrDefaultAsync(c => c.Email.ToLower() == email.Trim().ToLower());
 
             if (customer == null)
@@ -171,10 +175,11 @@ public class CustomerService : ICustomerService
     {
         try
         {
+            using var context = _factory.CreateDbContext();
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Email))
                 return ApiResponse<CustomerDto>.Fail("Name and Email are required.");
 
-            var emailExists = await _context.Customers
+            var emailExists = await context.Customers
                 .AnyAsync(c => c.Email.ToLower() == dto.Email.Trim().ToLower());
 
             if (emailExists)
@@ -193,8 +198,8 @@ public class CustomerService : ICustomerService
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
 
             return ApiResponse<CustomerDto>.Ok(MapToDto(customer), "Customer created successfully.");
         }
@@ -208,7 +213,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(id);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(id);
             if (customer == null)
                 return ApiResponse<CustomerDto>.Fail("Customer not found.");
 
@@ -218,7 +224,7 @@ public class CustomerService : ICustomerService
             var cleanedEmail = dto.Email.Trim().ToLower();
             if (customer.Email.ToLower() != cleanedEmail)
             {
-                var emailExists = await _context.Customers
+                var emailExists = await context.Customers
                     .AnyAsync(c => c.Email.ToLower() == cleanedEmail && c.Id != id);
 
                 if (emailExists)
@@ -232,7 +238,7 @@ public class CustomerService : ICustomerService
             customer.Address = dto.Address?.Trim();
             customer.IsActive = dto.IsActive;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             return ApiResponse<CustomerDto>.Ok(MapToDto(customer), "Customer updated successfully.");
         }
@@ -246,12 +252,13 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(id);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(id);
             if (customer == null)
                 return ApiResponse.Fail("Customer not found.");
 
             customer.IsActive = false;
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             return ApiResponse.Ok("Customer deactivated successfully.");
         }
@@ -265,12 +272,13 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(id);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(id);
             if (customer == null)
                 return ApiResponse.Fail("Customer not found.");
 
             customer.IsActive = true;
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             return ApiResponse.Ok("Customer activated successfully.");
         }
@@ -302,7 +310,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(customerId);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(customerId);
             if (customer == null)
                 return ApiResponse.Fail("Customer not found.");
 
@@ -325,8 +334,8 @@ public class CustomerService : ICustomerService
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.LoyaltyTransactions.Add(transaction);
-            await _context.SaveChangesAsync();
+            context.LoyaltyTransactions.Add(transaction);
+            await context.SaveChangesAsync();
 
             var msg = points >= 0
                 ? $"{points} points added. New balance: {customer.LoyaltyPoints}"
@@ -344,11 +353,12 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(customerId);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(customerId);
             if (customer == null)
                 return ApiResponse<List<SaleSummaryDto>>.Fail("Customer not found.");
 
-            var sales = await _context.Sales
+            var sales = await context.Sales
                 .Include(s => s.SaleItems)
                 .Where(s => s.CustomerId == customerId)
                 .OrderByDescending(s => s.SaleDate)
@@ -374,7 +384,8 @@ public class CustomerService : ICustomerService
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(customerId);
+            using var context = _factory.CreateDbContext();
+            var customer = await context.Customers.FindAsync(customerId);
             if (customer == null)
                 return ApiResponse.Fail("Customer not found.");
 

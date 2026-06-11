@@ -48,9 +48,9 @@ public partial class AppDbContext : DbContext
                      .HasMaxLength(50)
                      .IsRequired();
 
-               // Map the new property to the existing text column
+               // PermissionsJson stores JSON string — use its own column name
                entity.Property(e => e.PermissionsJson)
-                     .HasColumnName("Permissions");
+                     .HasColumnName("PermissionsJson");
           });
 
           // â”€â”€ Permission â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -68,7 +68,7 @@ public partial class AppDbContext : DbContext
                entity.Property(e => e.CanDelete).HasDefaultValue(false);
 
                 entity.HasOne(e => e.Role)
-                    .WithMany()
+                    .WithMany(r => r.Permissions)
                     .HasForeignKey(e => e.RoleId);
           });
 
@@ -82,7 +82,7 @@ public partial class AppDbContext : DbContext
                entity.Property(e => e.Email).HasMaxLength(150).IsRequired();
                entity.Property(e => e.PasswordHash).HasMaxLength(255).IsRequired();
                entity.Property(e => e.IsActive).HasDefaultValue(true);
-               entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
 
                entity.HasOne(e => e.Role)
                    .WithMany(r => r.Users)
@@ -101,7 +101,7 @@ public partial class AppDbContext : DbContext
                entity.Property(e => e.Address).HasColumnType("text");
                entity.Property(e => e.LoyaltyPoints).HasDefaultValue(0);
                entity.Property(e => e.TotalSpent).HasPrecision(10, 2).HasDefaultValue(0.00m);
-               entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
 
                entity.HasOne(e => e.User)
                    .WithOne(u => u.Customer)
@@ -115,7 +115,7 @@ public partial class AppDbContext : DbContext
 
                entity.Property(e => e.Action).HasMaxLength(255).IsRequired();
                entity.Property(e => e.Module).HasMaxLength(100).IsRequired();
-               entity.Property(e => e.Timestamp).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.Timestamp).HasDefaultValueSql("now() at time zone 'utc'");
                entity.Property(e => e.IPAddress).HasMaxLength(45);
                entity.Property(e => e.Details).HasColumnType("text");
 
@@ -175,7 +175,7 @@ public partial class AppDbContext : DbContext
                entity.Property(e => e.Price).HasPrecision(10, 2);
                entity.Property(e => e.CostPrice).HasPrecision(10, 2);
                entity.Property(e => e.IsActive).HasDefaultValue(true);
-               entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
 
                entity.HasOne(e => e.Category)
                    .WithMany(c => c.Products)
@@ -195,7 +195,7 @@ public partial class AppDbContext : DbContext
                entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
                entity.Property(e => e.DiscountAmount).HasPrecision(10, 2).HasDefaultValue(0.00m);
                entity.Property(e => e.TaxAmount).HasPrecision(10, 2);
-               entity.Property(e => e.SaleDate).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.SaleDate).HasDefaultValueSql("now() at time zone 'utc'");
                entity.Property(e => e.Status).HasDefaultValue(SaleStatus.Completed);
 
                entity.HasOne(e => e.Customer)
@@ -235,11 +235,11 @@ public partial class AppDbContext : DbContext
         // â”€â”€ Review â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           modelBuilder.Entity<Review>(entity =>
           {
-               entity.ToTable(t => t.HasCheckConstraint("CK_Review_Rating", "[Rating] >= 1 AND [Rating] <= 5"));
+               entity.ToTable(t => t.HasCheckConstraint("CK_Review_Rating", "\"Rating\" >= 1 AND \"Rating\" <= 5"));
 
                entity.Property(e => e.Comment).HasColumnType("text");
                entity.Property(e => e.Sentiment).HasMaxLength(20);
-               entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
 
                entity.HasOne(e => e.Customer)
                    .WithMany(c => c.Reviews)
@@ -253,10 +253,11 @@ public partial class AppDbContext : DbContext
         // â”€â”€ Inventory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           modelBuilder.Entity<Inventory>(entity =>
           {
+               entity.ToTable("Inventories");
                entity.HasIndex(e => e.ProductId, "IX_Inventories_ProductId").IsUnique();
 
                entity.Property(e => e.Quantity).HasDefaultValue(0);
-               entity.Property(e => e.LastUpdated).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.LastUpdated).HasDefaultValueSql("now() at time zone 'utc'");
 
                entity.HasOne(e => e.Product)
                    .WithOne(p => p.Inventory)
@@ -267,7 +268,7 @@ public partial class AppDbContext : DbContext
           modelBuilder.Entity<PurchaseOrder>(entity =>
           {
                entity.Property(e => e.TotalCost).HasPrecision(10, 2);
-               entity.Property(e => e.OrderDate).HasDefaultValueSql("(getutcdate())");
+               entity.Property(e => e.OrderDate).HasDefaultValueSql("now() at time zone 'utc'");
                entity.Property(e => e.Status).HasDefaultValue(POStatus.Draft);
                entity.Property(e => e.Notes).HasColumnType("text");
 
