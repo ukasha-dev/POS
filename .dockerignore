@@ -1,0 +1,11 @@
+bin/
+obj/
+.git/
+.vs/
+.vscode/
+.kiro/
+.env
+*.env
+!.env.example
+docs/
+*.md
